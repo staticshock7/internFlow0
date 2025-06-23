@@ -62,23 +62,23 @@ def ssh_func(dev, key, cmd):
         output = ""
         recv = ""
         shell.send(f"{cmd}\n")
-        sleep(1)
+        sleep(3)
         while True:
             if shell.recv_ready:
                 recv = shell.recv(1024).decode()
                 output += recv
                 if '--MORE--' in recv:
                     shell.send(' ')
-                    sleep(0.5)
+                    sleep(1)
             if recv.strip().endswith('>') or recv.strip().endswith('#'):
                 break
 
     except socket.gaierror as e:
         print(f"\n{RED}Invalid Host:{RST} {dev}. Resolution failed: {e}")
-        exit(1)
+        return f"[ERR] {dev}: {e}"
     except Exception as e:
         print(f"\n{RED}General connection failure:{RST} {e}")
-        exit(1)
+        return f"[ERR] {dev}: {e}"
     finally:
         ssh.close()
     
@@ -95,7 +95,7 @@ def opt1():
     # call the device list gathering function
     devs = dev_list()
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
+    with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, in2): i 
                    for i in devs
         }
@@ -122,7 +122,7 @@ def opt2():
 
     devs = dev_list()
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
+    with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
         for future in as_completed(futures):
@@ -150,7 +150,7 @@ def opt3():
     devs = dev_list()
 
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
+    with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
         for future in as_completed(futures):
@@ -178,7 +178,7 @@ def opt4():
     devs = dev_list()
 
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
+    with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
         for future in as_completed(futures):
@@ -207,7 +207,7 @@ def opt5():
 
     devs = dev_list()
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
+    with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
         for future in as_completed(futures):
@@ -235,8 +235,8 @@ def opt6():
 
     devs = dev_list()
 
-    with ThreadPoolExecutor(max_workers=4) as exe:
-        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
+    with ThreadPoolExecutor(max_workers=8) as exe:
+        futures = {exe.submit(ssh_func, i, key, in3): i for i in devs}
 
         for future in as_completed(futures):
             dev = futures[future]
