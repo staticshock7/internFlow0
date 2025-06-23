@@ -24,12 +24,13 @@ def menus():
     print(f"{MAG}4.{RESET} Regex IP \t+ \tSuffix")
     print(f"{MAG}5.{RESET} Prefix \t+ \tSpecific IP \t+ Suffix")
     print(f"{MAG}6.{RESET} Prefix \t+ \tRegex IP \t+ Suffix")
+    print(f"{MAG}7.{RESET} Enter \t{RED}Q{RESET} \t to quit")
 
 # recv_input function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
     arr1 = []
     while True:
-        var1 = input(f"{RED}>>>{RESET} Enter devices (e.g. {MAG}XXXX4400 XXXX4401{RESET}) or a file path with one device per line:\n\n{YEL}>{RESET} ")
+        var1 = input(f"{RED}>>>{RESET} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RESET}) or a file path with one device per line:\n\n{YEL}>{RESET} ")
         try:
             if path.exists(var1):
                 print("\n\n============= Path exists — Continuing... =============\n")
@@ -63,6 +64,7 @@ def opt1():
     devs = dev_list()
 
     for i in devs:
+        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -110,6 +112,7 @@ def opt2():
     devs = dev_list()
 
     for i in devs:
+        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -159,6 +162,7 @@ def opt3():
     devs = dev_list()
 
     for i in devs:
+        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -207,6 +211,7 @@ def opt4():
     devs = dev_list()
 
     for i in devs:
+        print(f"\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -256,6 +261,7 @@ def opt5():
     devs = dev_list()
 
     for i in devs:
+        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -307,6 +313,9 @@ def opt6():
     devs = dev_list()
 
     for i in devs:
+
+        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
+
         try:
             
             ssh.connect(f"{i}.mgmt", username='admin', password=key)
@@ -343,22 +352,29 @@ def opt6():
             ssh.close()
 
 def main():
-    menus()
-    choice1 = input(f"{YEL}>{RESET} ")
 
-    if choice1 == '1':
-        opt1()
-    elif choice1 == '2':
-        print()
-        opt2()
-    elif choice1 == '3':
-        opt3()
-    elif choice1 == '4':
-        opt4()
-    elif choice1 == '5':
-        opt5()
-    elif choice1 == '6':
-        opt6()
+    while True:
+        menus()
+        choice1 = input(f"{YEL}>{RESET} ")
+
+        if choice1 == '1':
+            opt1()
+        elif choice1 == '2':
+            print()
+            opt2()
+        elif choice1 == '3':
+            opt3()
+        elif choice1 == '4':
+            opt4()
+        elif choice1 == '5':
+            opt5()
+        elif choice1 == '6':
+            opt6()
+        elif choice1.lower() == 'q':
+            print(f"\n\n {RED}Exiting...{RESET}")
+            break
+        else:
+            print(f"\nChoose a an option or use {RED}q{RESET} to exit.")
 
 if __name__ == "__main__":
     main()
