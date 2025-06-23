@@ -1,0 +1,134 @@
+from time import sleep
+from datetime import datetime
+from paramiko import SSHClient, AutoAddPolicy
+import socket
+from getpass import getpass
+from os import path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+# Terminal color codes
+RED = "\033[31m"
+GRN = "\033[32m"
+YEL = "\033[33m"
+MAG = "\033[35m"
+CYN = "\033[36m"
+RESET = "\033[0m"
+
+
+
+def menus():
+    print(f"\nSelect your query type: \n")
+    print(f"{MAG}1.{RESET} Prefix \t+ \tSpecific IP")
+    print(f"{MAG}2.{RESET} Prefix \t+ \tREGEX IP")
+    print(f"{MAG}3.{RESET} Specific IP \t+ \tSuffix")
+    print(f"{MAG}4.{RESET} Regex IP \t+ \tSuffix")
+    print(f"{MAG}5.{RESET} Prefix \t+ \tSpecific IP \t+ Suffix")
+    print(f"{MAG}6.{RESET} Prefix \t+ \tRegex IP \t+ Suffix")
+
+def revc_input():
+    arr1 = []
+    while True:
+        var1 = input(f"{RED}>>>{RESET} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RESET}) or a file path with one device per line:\n\n> ")
+        if path.exists(var1):
+            print("\n\n============= Path exists — Continuing... =============\n")
+            with open(var1, "r") as file:
+                arr1 = [line.strip() for line in file if line.strip()]
+        else:
+            try:
+                arr1 = var1.strip().split()
+            except Exception:
+                print(f"{RED}>>>{RESET} Invalid input! Try again.\n")
+                continue
+        print(f"{GRN}Devices to be queried: {arr1}{RESET}\n")
+        break
+    return arr1
+
+def opt1():
+    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RESET} output.\n\n Example: {GRN}permit tcp 10.251.109.0{RESET}")
+    in1 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
+    in2 = input(f"{YEL}>{RESET} ")
+
+    key = getpass('Enter the SSH password: ')
+    ssh = SSHClient()
+    ssh.set_missing_host_key_policy(AutoAddPolicy())
+
+    devs = revc_input()
+
+    for i in devs:
+        try:
+            
+            ssh.connect(f"{i}.mgmt", username='admin', password=key)
+            shell = ssh.invoke_shell()
+            sleep(2)
+            output = ""
+            recv = ""
+            shell.send(f"{in2}\n")
+            sleep(1)
+            while True:
+                if shell.recv_ready:
+                    recv = shell.recv(1024).decode()
+                    output += recv
+                    if '--MORE--' in recv:
+                        shell.send(' ')
+                        sleep(0.5)
+                if recv.strip().endswith('>') or recv.strip().endswith('#'):
+                    break
+
+            if in1 in output:
+                print(f"✔️  {GRN}MATCH{RESET} → {YEL}{i}{RESET}")
+            else:
+                print(f"✖️  {RED}NO MATCH{RESET} → {YEL}{i}{RESET}")
+
+
+        except socket.gaierror as e:
+            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
+            exit(1)
+        except Exception as e:
+            print(f"\n{RED}General connection failure:{RESET} {e}")
+            exit(1)
+        finally:
+            ssh.close()
+
+def opt2():
+    print(f"Enter the {RED}string prefix{RESET} to be queried\n\n Example: {GRN}permit tcp{RESET}")
+    val1 = input("> ")
+    
+
+def opt3():
+    print(f"Enter the suffix string including the IP for querying.\n\n Example: {GRN}0.0.0.0 any eq 22{RESET}")
+    val1 = input("> ")
+
+def opt4():
+    print(f"Enter the {RED}string suffix{RESET} for querying.\n\n Example: {GRN}any eq 22{RESET}")
+    val1 = input("> ")
+
+def opt5():
+    print(f"Enter the {RED}entire string including the IP{RESET} for querying.\n\n Example: {GRN}permit tcp 0.0.0.0 0.0.0.0 any eq 22{RESET}")
+    val1 = input("> ")
+
+
+def opt6():
+    print(f"Enter the {RED}prefix string{RESET} for querying.\n\n Example: {GRN}permit tcp{RESET}")
+    val1 = input("> ")
+    print(f"Enter the {RED}suffix string{RESET} for querying.\n\n Example: {GRN}any eq 22{RESET}")
+    val2 = input("> ")
+
+def main():
+    menus()
+    choice1 = input(f"{YEL}>{RESET} ")
+
+    if choice1 == '1':
+        opt1()
+    elif choice1 == '2':
+        opt2()
+    elif choice1 == '3':
+        opt3()
+    elif choice1 == '4':
+        opt4()
+    elif choice1 == '5':
+        opt5()
+    elif choice1 == '6':
+        opt6()
+
+if __name__ == "__main__":
+    main()
