@@ -74,7 +74,7 @@ def ssh_func(dev, key, cmd):
                 break
 
     except socket.gaierror as e:
-        print(f"\n{RED}Invalid Host:{RST} {i}. Resolution failed: {e}")
+        print(f"\n{RED}Invalid Host:{RST} {dev}. Resolution failed: {e}")
         exit(1)
     except Exception as e:
         print(f"\n{RED}General connection failure:{RST} {e}")
@@ -90,19 +90,26 @@ def opt1():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     in2 = input(f"{YEL}>{RST} ")
 
+    # get the ssh pass
     key = getpass('Enter the SSH password: ')
-
+    # call the device list gathering function
     devs = dev_list()
 
-    for i in devs:
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i 
+                   for i in devs
+        }
 
-        output = ssh_func(i, key, in2)
+        for future in as_completed(futures):
+            device = futures[future]
+            output = future.result()
 
-        if in1 in output:
-            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
-        else:
-            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{device}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+        
+            if in1 in output:
+                print(f"✔️  {GRN}MATCH{RST} → {YEL}{device}{RST}")
+            else:
+                print(f"✖️  {RED}NO MATCH{RST} → {YEL}{device}{RST}")
 
 
 def opt2():
@@ -115,15 +122,20 @@ def opt2():
 
     devs = dev_list()
 
-    for i in devs:
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
-        output = ssh_func(i, key, in2)
-        output = output.splitlines()
-        # regex for IPs
-        for j in output:
-            if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
-                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
+        for future in as_completed(futures):
+            dev = futures[future]
+            output = future.result()
+
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+            output = output.splitlines()
+
+            for j in output:
+                if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
+                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+
 
 
 # may remove opt3, as it is functionally the same as opt1, but may be user friendly, conceptually
@@ -137,15 +149,21 @@ def opt3():
 
     devs = dev_list()
 
-    for i in devs:
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-        output = ssh_func(i, key, in2)
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
-        if in1 in output:
-            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
-        else:
-            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
+        for future in as_completed(futures):
+            dev = futures[future]
+            output = future.result()
+
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+
+            if in1 in output:
+                print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
+            else:
+                print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+
 
 
 # swapped the regex of opt2 around
@@ -159,18 +177,25 @@ def opt4():
 
     devs = dev_list()
 
-    for i in devs:
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-        output = ssh_func(i, key, in2)
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
-        output = output.splitlines()
-        # regex for IPs
-        for j in output:
-            if (findall(fr"\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in1}\b", j)):
-                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
+        for future in as_completed(futures):
+            dev = futures[future]
+            output = future.result()
+
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+
+            output = output.splitlines() # make a list of each line for indexing
+            # regex for IPs
+            for j in output:
+                if (findall(fr"\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in1}\b", j)):
+                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
 
 
+
+        
 # also functionally the same as op1, but may be user friendly, conceptually
 def opt5():
     print(f"Enter the {RED}entire string including the IP{RST} for querying.\n\n Example: {GRN}permit tcp 0.0.0.0 0.0.0.0 any eq 22{RST}")
@@ -182,14 +207,19 @@ def opt5():
 
     devs = dev_list()
 
-    for i in devs:
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
-        output = ssh_func(i, key, in2)
-        if in1 in output:
-            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
-        else:
-            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
+        for future in as_completed(futures):
+            dev = futures[future]
+            output = future.result()
+
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed  
+
+            if in1 in output:
+                print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
+            else:
+                print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")          
 
 
 def opt6():
@@ -205,17 +235,21 @@ def opt6():
 
     devs = dev_list()
 
-    for i in devs:
+    with ThreadPoolExecutor(max_workers=4) as exe:
+        futures = {exe.submit(ssh_func, i, key, in2): i for i in devs}
 
-        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+        for future in as_completed(futures):
+            dev = futures[future]
+            output = future.result()
 
-        
-        output = ssh_func(i, key, in3)
-        output = output.splitlines()
-        # regex for IPs
-        for j in output:
-            if (findall(fr"{in1}\s*\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in2}\b", j)):
-                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
+            print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+
+            output = output.splitlines()
+            # regex for IPs
+            for j in output:
+                if (findall(fr"{in1}\s*\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in2}\b", j)):
+                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+
 
 def main():
 
@@ -249,3 +283,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    
