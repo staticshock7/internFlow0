@@ -12,25 +12,25 @@ GRN = "\033[32m"
 YEL = "\033[33m"
 MAG = "\033[35m"
 CYN = "\033[36m"
-RESET = "\033[0m"
+RST = "\033[0m"
 
 
 # prints the menu for the user
 def menus():
     print(f"\nSelect your query type: \n")
-    print(f"{MAG}1.{RESET} Prefix \t+ \tSpecific IP")
-    print(f"{MAG}2.{RESET} Prefix \t+ \tREGEX IP")
-    print(f"{MAG}3.{RESET} Specific IP \t+ \tSuffix")
-    print(f"{MAG}4.{RESET} Regex IP \t+ \tSuffix")
-    print(f"{MAG}5.{RESET} Prefix \t+ \tSpecific IP \t+ Suffix")
-    print(f"{MAG}6.{RESET} Prefix \t+ \tRegex IP \t+ Suffix")
-    print(f"{MAG}7.{RESET} Enter \t{RED}Q{RESET} \t to quit")
+    print(f"{MAG}1.{RST} Prefix \t+ \tSpecific IP")
+    print(f"{MAG}2.{RST} Prefix \t+ \tREGEX IP")
+    print(f"{MAG}3.{RST} Specific IP \t+ \tSuffix")
+    print(f"{MAG}4.{RST} Regex IP \t+ \tSuffix")
+    print(f"{MAG}5.{RST} Prefix \t+ \tSpecific IP \t+ Suffix")
+    print(f"{MAG}6.{RST} Prefix \t+ \tRegex IP \t+ Suffix")
+    print(f"{MAG}7.{RST} Enter \t{RED}Q{RST} \t to quit\n")
 
 # recv_input function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
     arr1 = []
     while True:
-        var1 = input(f"{RED}>>>{RESET} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RESET}) or a file path with one device per line:\n\n{YEL}>{RESET} ")
+        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {MAG}XXXX4400 XXXX4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
         try:
             if path.exists(var1):
                 print("\n\n============= Path exists — Continuing... =============\n")
@@ -38,343 +38,214 @@ def dev_list():
                     arr1 = [line.strip() for line in file if line.strip()]
                     break
         except Exception:
-            print(f"\nIn valid path! Do not enclose the path in {RED}quotes!{RESET}")
+            print(f"\nIn valid path! Do not enclose the path in {RED}quotes!{RST}")
             continue
         else:
             try:
                 arr1 = var1.strip().split() # removes the carriage returns, and adds each to a list
                 break
             except Exception:
-                print(f"{RED}>>>{RESET} Invalid input! {RED}Use spaces between devices{RESET} Try again.\n")
+                print(f"{RED}>>>{RST} Invalid input! {RED}Use spaces between devices{RST} Try again.\n")
                 continue
-    print(f"\nDevices to be queried: {GRN}{arr1}{RESET}\n")
+    print(f"\nDevices to be queried: {GRN}{arr1}{RST}")
         
     return arr1
 
-def opt1():
-    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RESET} output.\n\n Example: {GRN}permit tcp 10.251.109.0{RESET}")
-    in1 = input(f"{YEL}>{RESET} ")
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in2 = input(f"{YEL}>{RESET} ")
-
-    key = getpass('Enter the SSH password: ')
+def ssh_func(dev, key, cmd):
     ssh = SSHClient()
     ssh.set_missing_host_key_policy(AutoAddPolicy())
+
+    try:       
+        ssh.connect(f"{dev}.mgmt", username='admin', password=key)
+        shell = ssh.invoke_shell()
+        sleep(2)
+        output = ""
+        recv = ""
+        shell.send(f"{cmd}\n")
+        sleep(1)
+        while True:
+            if shell.recv_ready:
+                recv = shell.recv(1024).decode()
+                output += recv
+                if '--MORE--' in recv:
+                    shell.send(' ')
+                    sleep(0.5)
+            if recv.strip().endswith('>') or recv.strip().endswith('#'):
+                break
+
+    except socket.gaierror as e:
+        print(f"\n{RED}Invalid Host:{RST} {i}. Resolution failed: {e}")
+        exit(1)
+    except Exception as e:
+        print(f"\n{RED}General connection failure:{RST} {e}")
+        exit(1)
+    finally:
+        ssh.close()
+    
+    return output
+
+def opt1():
+    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example: {GRN}permit tcp 10.251.109.0{RST}")
+    in1 = input(f"{YEL}>{RST} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in2 = input(f"{YEL}>{RST} ")
+
+    key = getpass('Enter the SSH password: ')
 
     devs = dev_list()
 
     for i in devs:
-        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in2}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-            if in1 in output:
-                print(f"✔️  {GRN}MATCH{RESET} → {YEL}{i}{RESET}")
-            else:
-                print(f"✖️  {RED}NO MATCH{RESET} → {YEL}{i}{RESET}")
+        output = ssh_func(i, key, in2)
 
+        if in1 in output:
+            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
+        else:
+            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
 
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
 
 def opt2():
-    print(f"Enter the {RED}string prefix{RESET} to be queried\n\n Example: {GRN}permit tcp{RESET}")
-    in1 = input(f"{YEL}>{RESET} ")
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in2 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}string prefix{RST} to be queried\n\n Example: {GRN}permit tcp{RST}")
+    in1 = input(f"{YEL}>{RST} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in2 = input(f"{YEL}>{RST} ")
 
     key = getpass('Enter the SSH password: ')
-    ssh = SSHClient()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
 
     devs = dev_list()
 
     for i in devs:
-        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in2}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-            output = output.splitlines()
-            # regex for IPs
-            for j in output:
-                if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
-                    print(f"✔️ {GRN}MATCH{RESET} → {YEL}{i}{RESET} {RED}>>>{RESET} {j}")
+        output = ssh_func(i, key, in2)
+        output = output.splitlines()
+        # regex for IPs
+        for j in output:
+            if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
+                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
 
-
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
 
 # may remove opt3, as it is functionally the same as opt1, but may be user friendly, conceptually
 def opt3():
-    print(f"Enter the suffix string including the IP for querying.\n\n Example: {GRN}0.0.0.0 any eq 22{RESET}")
+    print(f"Enter the suffix string including the IP for querying.\n\n Example: {GRN}0.0.0.0 any eq 22{RST}")
     in1 = input("> ")
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in2 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in2 = input(f"{YEL}>{RST} ")
 
     key = getpass('Enter the SSH password: ')
-    ssh = SSHClient()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
 
     devs = dev_list()
 
     for i in devs:
-        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in2}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-            if in1 in output:
-                print(f"✔️  {GRN}MATCH{RESET} → {YEL}{i}{RESET}")
-            else:
-                print(f"✖️  {RED}NO MATCH{RESET} → {YEL}{i}{RESET}")
+        output = ssh_func(i, key, in2)
 
+        if in1 in output:
+            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
+        else:
+            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
 
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
 
 # swapped the regex of opt2 around
 def opt4():
-    print(f"Enter the {RED}string suffix{RESET} for querying.\n\n Example: {GRN}any eq 22{RESET}")
+    print(f"Enter the {RED}string suffix{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
     in1 = input("> ")
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in2 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in2 = input(f"{YEL}>{RST} ")
 
     key = getpass('Enter the SSH password: ')
-    ssh = SSHClient()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
 
     devs = dev_list()
 
     for i in devs:
-        print(f"\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in2}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-            output = output.splitlines()
-            # regex for IPs
-            for j in output:
-                if (findall(fr"\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in1}\b", j)):
-                    print(f"✔️ {GRN}MATCH{RESET} → {YEL}{i}{RESET} {RED}>>>{RESET} {j}")
+        output = ssh_func(i, key, in2)
 
+        output = output.splitlines()
+        # regex for IPs
+        for j in output:
+            if (findall(fr"\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in1}\b", j)):
+                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
 
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
 
 # also functionally the same as op1, but may be user friendly, conceptually
 def opt5():
-    print(f"Enter the {RED}entire string including the IP{RESET} for querying.\n\n Example: {GRN}permit tcp 0.0.0.0 0.0.0.0 any eq 22{RESET}")
+    print(f"Enter the {RED}entire string including the IP{RST} for querying.\n\n Example: {GRN}permit tcp 0.0.0.0 0.0.0.0 any eq 22{RST}")
     in1 = input("> ")
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in2 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in2 = input(f"{YEL}>{RST} ")
 
     key = getpass('Enter the SSH password: ')
-    ssh = SSHClient()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
 
     devs = dev_list()
 
     for i in devs:
-        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in2}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-            if in1 in output:
-                print(f"✔️  {GRN}MATCH{RESET} → {YEL}{i}{RESET}")
-            else:
-                print(f"✖️  {RED}NO MATCH{RESET} → {YEL}{i}{RESET}")
-
-
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
+        output = ssh_func(i, key, in2)
+        if in1 in output:
+            print(f"✔️  {GRN}MATCH{RST} → {YEL}{i}{RST}")
+        else:
+            print(f"✖️  {RED}NO MATCH{RST} → {YEL}{i}{RST}")
 
 
 def opt6():
-    print(f"Enter the {RED}prefix string{RESET} for querying.\n\n Example: {GRN}permit tcp{RESET}")
+    print(f"Enter the {RED}prefix string{RST} for querying.\n\n Example: {GRN}permit tcp{RST}")
     in1 = input("> ")
-    print(f"Enter the {RED}suffix string{RESET} for querying.\n\n Example: {GRN}any eq 22{RESET}")
+    print(f"Enter the {RED}suffix string{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
     in2 = input("> ")
 
-    print(f"Enter the {RED}specific{RESET} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RESET}")
-    in3 = input(f"{YEL}>{RESET} ")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    in3 = input(f"{YEL}>{RST} ")
 
     key = getpass('Enter the SSH password: ')
-    ssh = SSHClient()
-    ssh.set_missing_host_key_policy(AutoAddPolicy())
 
     devs = dev_list()
 
     for i in devs:
 
-        print(f"\n\n{MAG}{'='*25}{RESET} {YEL}{i}{RESET} {MAG}{'='*25}{RESET}\n") # banner for each device results printed
+        print(f"\n{MAG}{'='*25}{RST} {YEL}{i}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-        try:
-            
-            ssh.connect(f"{i}.mgmt", username='admin', password=key)
-            shell = ssh.invoke_shell()
-            sleep(2)
-            output = ""
-            recv = ""
-            shell.send(f"{in3}\n")
-            sleep(1)
-            while True:
-                if shell.recv_ready:
-                    recv = shell.recv(1024).decode()
-                    output += recv
-                    if '--MORE--' in recv:
-                        shell.send(' ')
-                        sleep(0.5)
-                if recv.strip().endswith('>') or recv.strip().endswith('#'):
-                    break
-
-            output = output.splitlines()
-            # regex for IPs
-            for j in output:
-                if (findall(fr"{in1}\s*\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in2}\b", j)):
-                    print(f"✔️ {GRN}MATCH{RESET} → {YEL}{i}{RESET} {RED}>>>{RESET} {j}")
-
-
-        except socket.gaierror as e:
-            print(f"\n{RED}Invalid Host:{RESET} {i}. Resolution failed: {e}")
-            exit(1)
-        except Exception as e:
-            print(f"\n{RED}General connection failure:{RESET} {e}")
-            exit(1)
-        finally:
-            ssh.close()
+        
+        output = ssh_func(i, key, in3)
+        output = output.splitlines()
+        # regex for IPs
+        for j in output:
+            if (findall(fr"{in1}\s*\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in2}\b", j)):
+                print(f"✔️ {GRN}MATCH{RST} → {YEL}{i}{RST} {RED}>>>{RST} {j}")
 
 def main():
 
     while True:
         menus()
-        choice1 = input(f"{YEL}>{RESET} ")
+        choice1 = input(f"{YEL}>{RST} ")
 
         if choice1 == '1':
             opt1()
+            break
         elif choice1 == '2':
-            print()
             opt2()
+            break
         elif choice1 == '3':
             opt3()
+            break
         elif choice1 == '4':
             opt4()
+            break
         elif choice1 == '5':
             opt5()
+            break
         elif choice1 == '6':
             opt6()
+            break
         elif choice1.lower() == 'q':
-            print(f"\n\n {RED}Exiting...{RESET}")
+            print(f"\n\n {RED}Exiting...{RST}")
             break
         else:
-            print(f"\nChoose a an option or use {RED}q{RESET} to exit.")
+            print(f"\nChoose a an option or use {RED}q{RST} to exit.")
 
 if __name__ == "__main__":
     main()
