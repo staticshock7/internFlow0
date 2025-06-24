@@ -29,7 +29,7 @@ def menus():
     print(f"{MAG}8.{RST} Download configs")
     print(f"\n{MAG}9.{RST} Enter \t{RED}Q{RST} \t to quit\n")
 
-# recv_input function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
+# dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
     arr1 = []
     while True:
@@ -66,12 +66,12 @@ def ssh_func(dev, key, cmd):
         recv = ""
         shell.send(f"{cmd}\n")
         sleep(1)
-        print(dev) # may remove later; for observation
+
         while True:
             if shell.recv_ready:
                 recv = shell.recv(1024).decode()
                 output += recv
-                if '--MORE--' in recv:
+                if '--MORE--' in recv or '--More--' in recv:
                     shell.send(' ')
                     sleep(0.5)
             if recv.strip().endswith('>') or recv.strip().endswith('#'):
@@ -95,7 +95,7 @@ def opt0():
 
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -111,7 +111,7 @@ def opt1():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -138,12 +138,12 @@ def opt1():
 
 
 def opt2():
-    print(f"Enter the {RED}string prefix{RST} to be queried\n\n Example: {GRN}permit tcp{RST}")
+    print(f"Enter the {RED}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
     in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST} || prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
+    print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -174,7 +174,7 @@ def opt3():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -203,7 +203,7 @@ def opt4():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -240,7 +240,7 @@ def opt5():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -271,7 +271,7 @@ def opt6():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -307,7 +307,7 @@ def opt7():
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
 
-    if 'show config' not in cmd1:
+    if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
         sleep(4)
         main()
@@ -335,10 +335,10 @@ def opt7():
 def opt8():
     devs = dev_list()
     key = getpass('Enter the SSH password: ')
-
+    cmd1 = input(f"Enter the show config command for your system:\n{YEL}>{RST} ")
     with ThreadPoolExecutor(max_workers=8) as exe:
-        futures = {exe.submit(ssh_func, i, key, cmd="show config"):i for i in devs}
-
+        futures = {exe.submit(ssh_func, i, key, cmd1):i for i in devs}
+    print("after threadpool")
     ### Creating a directory
     print(f"Would you like to store them in a new directory? [y/N]: ")
     in1 = input(f"{YEL}>{RST} ")
@@ -417,6 +417,7 @@ def main():
             print(f"\nChoose a an option or use {RED}q{RST} to exit.")
 
 if __name__ == "__main__":
-    main()
-
-    
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Exiting")
