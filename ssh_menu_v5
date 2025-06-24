@@ -1,10 +1,11 @@
 from time import sleep
+from datetime import datetime
 from paramiko import SSHClient, AutoAddPolicy
 import socket
 from getpass import getpass
-from os import path
+from os import path, makedirs
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from re import findall
+from re import findall, sub
 # Terminal color codes
 RED = "\033[31m"
 GRN = "\033[32m"
@@ -25,7 +26,8 @@ def menus():
     print(f"{MAG}5.{RST} Prefix \t+ \tSpecific IP \t+ Suffix")
     print(f"{MAG}6.{RST} Prefix \t+ \t{CYN}RegEx IP{RST} \t+ Suffix")
     print(f"{MAG}7.{RST} String search")
-    print(f"\n{MAG}8.{RST} Enter \t{RED}Q{RST} \t to quit\n")
+    print(f"{MAG}8.{RST} Download configs")
+    print(f"\n{MAG}9.{RST} Enter \t{RED}Q{RST} \t to quit\n")
 
 # recv_input function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
@@ -64,6 +66,7 @@ def ssh_func(dev, key, cmd):
         recv = ""
         shell.send(f"{cmd}\n")
         sleep(1)
+        print(dev) # may remove later; for observation
         while True:
             if shell.recv_ready:
                 recv = shell.recv(1024).decode()
@@ -87,8 +90,8 @@ def ssh_func(dev, key, cmd):
 
 
 def opt0():
+    dev = input(f"{RED}>>>{RST} Enter device (e.g. {MAG}LBEPOL4400{RST})\n{YEL}>{RST} ")
     key = getpass('Enter the SSH password: ')
-    dev = input(f"{RED}>>>{RST} Enter device (e.g. {MAG}LBEPOL4400 LBEPOL4401{RST})\n{YEL}>{RST} ")
 
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
@@ -113,10 +116,9 @@ def opt1():
         sleep(4)
         main()
     else:
+        devs = dev_list()
         # get the ssh pass
         key = getpass('Enter the SSH password: ')
-        # call the device list gathering function
-        devs = dev_list()
 
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i 
@@ -146,9 +148,8 @@ def opt2():
         sleep(4)
         main()
     else:
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
-
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -178,8 +179,8 @@ def opt3():
         sleep(4)
         main()
     else:
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -207,8 +208,8 @@ def opt4():
         sleep(4)
         main()
     else:
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -244,9 +245,8 @@ def opt5():
         sleep(4)
         main()
     else:
-
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -276,8 +276,8 @@ def opt6():
         sleep(4)
         main()
     else:
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -312,8 +312,8 @@ def opt7():
         sleep(4)
         main()
     else:
-        key = getpass('Enter the SSH password: ')
         devs = dev_list()
+        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -331,9 +331,50 @@ def opt7():
                 if not matched:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}") 
 
-
+# downloading the configs
 def opt8():
-    ""
+    devs = dev_list()
+    key = getpass('Enter the SSH password: ')
+
+    with ThreadPoolExecutor(max_workers=8) as exe:
+        futures = {exe.submit(ssh_func, i, key, cmd="show config"):i for i in devs}
+
+    ### Creating a directory
+    print(f"Would you like to store them in a new directory? [y/N]: ")
+    in1 = input(f"{YEL}>{RST} ")
+    if in1.lower() == 'y':
+        print(f"Enter the new directory name: ")
+        in2 = input(f"{YEL}>{RST} ")
+        try:
+            makedirs(in2, exist_ok=True)
+            print(f"Created {GRN}{in2}{RST}")
+        except Exception as e:
+            print(f"Unable to create {RED}{in2}{RST} due to {RED}{e}{RST}")
+    # End of Creating a directory
+
+    for future in as_completed(futures):
+        dev = futures[future]
+        output = future.result()
+
+        if in1.lower() == 'y':
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            try:
+                with open(f"{in2}/{dev}_{timestamp}_conf.txt", "a") as file:
+                    file.write(output)
+                    print(f"\n{MAG}{'='*25}{RST} Written {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+            except Exception as e:
+                print(f"Unable to access {RED}{file}{RST} due to {RED}{e}{RST}")
+        else:
+            try:
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                with open(f"{dev}_{timestamp}_conf.txt", "a") as file:
+                    file.write(output)
+                    print(f"\n{MAG}{'='*25}{RST} Written {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
+            except Exception as e:
+                print(f"Unable to access {RED}{file}{RST} due to {RED}{e}{RST}")
+
+    ## check if the user would like to save the config to a folder
+
 
 def main():
 
@@ -364,6 +405,9 @@ def main():
             sleep(5)
         elif choice1 == '7':
             opt7()
+            sleep(5)
+        elif choice1 == '8':
+            opt8()
             sleep(5)
         elif choice1.lower() == 'q':
             print(f"\n\n {RED}Exiting...{RST}")
