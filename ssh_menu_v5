@@ -17,8 +17,9 @@ logged = False
 
 # prints the menu for the user
 def menus():
+    print(f"\n{MAG}{'='*75}{RST}")
     print(f"\nSelect your query type: \n")
-    print(f"{MAG}0.{RST} To run a {GRN}show config{RST} command against a possible good sample device.")
+    print(f"{MAG}0.{RST} To run a {GRN}show config{RST} command against {GRN}a possible good sample device{RST}. [{RED}Not Repeatable{RST}]")
     print(f"{MAG}1.{RST} Prefix \t+ \tSpecific IP")
     print(f"{MAG}2.{RST} Prefix \t+ \t{CYN}RegEx IP{RST}")
     print(f"{MAG}3.{RST} Specific IP \t+ \tSuffix")
@@ -26,9 +27,10 @@ def menus():
     print(f"{MAG}5.{RST} Prefix \t+ \tSpecific IP \t+ Suffix")
     print(f"{MAG}6.{RST} Prefix \t+ \t{CYN}RegEx IP{RST} \t+ Suffix")
     print(f"{MAG}7.{RST} String search")
-    print(f"{MAG}8.{RST} Download configs")
-    print(f"\n{MAG}8.{RST} Enter \t{RED}N{RST} \t to renew device list!")
-    print(f"{MAG}9.{RST} Enter \t{RED}Q{RST} \t to quit\n")
+    print(f"{MAG}8.{RST} Download configs  [{RED}Not Repeatable{RST}]")
+    print(f"\n{MAG}8.{RST} Enter \t{RED}R{RST} \t to {YEL}repeat{RST} the last function!")
+    print(f"{MAG}8.{RST} Enter \t{RED}N{RST} \t to {YEL}renew{RST} device list!")
+    print(f"{MAG}9.{RST} Enter \t{RED}Q{RST} \t to {YEL}quit{RST}\n")
 
 # dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
@@ -37,7 +39,7 @@ def dev_list():
         var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
         try:
             if path.exists(var1):
-                print("\n\n============= Path exists — Continuing... =============\n")
+                print(f"\n\n{"="*25} Path exists — Continuing... {"="*25}\n")
                 with open(var1, "r") as file:
                     arr1 = [line.strip() for line in file if line.strip()]
                     break
@@ -107,12 +109,78 @@ def opt0():
         print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
         print(f"\n{CYN}{output}{RST}")
 
+class repeat:
+    def __init__(self):
+        self.string1 = None
+        self.string2 = None
+        self.cmd = None
+        self.func = None
+
+    # self explanatory
+    def set_string1(self, string1):
+        self.string1 = string1
+    def set_string2(self, string2):
+        self.string2 = string2
+    def set_cmd(self, cmd1):
+        self.cmd = cmd1
+    def set_func(self,func):
+        self.func = func
+
+    def get_string1(self):
+        return self.string1
+    def get_string2(self):
+        return self.string2
+    def get_cmd(self):
+        return self.cmd
+    def get_func(self):
+        return self.func
+
+# global instance of the repeat class
+repeats = repeat()
+
+def repeater():
+    if repeats.get_func() == 1:
+        cache(1)
+        sleep(2)
+    elif repeats.get_func() == 2:
+        cache(2)
+        sleep(2)
+    elif repeats.get_func() == 3:
+        cache(3)
+        sleep(2)
+    elif repeats.get_func() == 4:
+        cache(4)
+        sleep(2)
+    elif repeats.get_func() == 5:
+        cache(5)
+        sleep(2)
+    elif repeats.get_func() == 6:
+        cache(6)
+        sleep(2)
+    elif repeats.get_func() == 7:
+        cache(7)
+        sleep(2)
+    elif repeats.get_func() == 8:
+        print(f"\n{YEL}Unable to repeat this function!")
+        sleep(2)
+    else:
+        print(f"\n{RED}There is nothing available to repeat, right now!\n")
+    
 
 def opt1(devs, key):
-    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word directly before the IP: {YEL}tcp{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-    cmd1 = input(f"{YEL}>{RST} ")
+    # checks the instance for Boolean state of get_string
+    if repeats.get_string1() and repeats.get_func() == 1:
+        # print("This ran")
+        # print(bool(repeats.get_string1))
+        in1 = repeats.get_string1() # assigns values for these variables as repetition
+        cmd1 = repeats.get_cmd()
+    else:
+        print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word directly before the IP: {YEL}tcp{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1) # stores the input as data for the obj instance
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_cmd(cmd1)# stores the input as data for the obj instance
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -137,10 +205,16 @@ def opt1(devs, key):
     return devs, key
 
 def opt2(devs, key):
-    print(f"Enter the {RED}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 2:
+        in1 = repeats.get_string1()
+        cmd1 = repeats.get_cmd()
+    else: 
+        print(f"Enter the {RED}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_cmd(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -167,10 +241,16 @@ def opt2(devs, key):
 
 # may remove opt3, as it is functionally the same as opt1, but may be user friendly, conceptually
 def opt3(devs, key):
-    print(f"Enter the suffix string including the IP for querying.\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 3:
+        in1 = repeats.get_string1()
+        cmd1 = repeats.get_cmd()
+    else: 
+        print(f"Enter the suffix string including the IP for querying.\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -194,10 +274,16 @@ def opt3(devs, key):
 
 # swapped the regex of opt2 around
 def opt4(devs, key):
-    print(f"Enter the {RED}string suffix{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 4:
+        in1 = repeats.get_string1()
+        cmd1 = repeats.get_cmd()
+    else:     
+        print(f"Enter the {RED}string suffix{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -229,10 +315,16 @@ def opt4(devs, key):
         
 # also functionally the same as opt1, but may be user friendly, conceptually
 def opt5(devs, key):
-    print(f"Enter the {RED}entire string including the IP{RST} for querying.\n Example: {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 5:
+        in1 = repeats.get_string1()
+        cmd1 = repeats.get_cmd()
+    else:     
+        print(f"Enter the {RED}entire string including the IP{RST} for querying.\n Example: {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -256,13 +348,20 @@ def opt5(devs, key):
 
 # for searching string + REGEX IP + string
 def opt6(devs, key):
-    print(f"Enter the {RED}prefix string{RST} for querying.\n\n \n Example (in yellow): {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 any eq 22{RST} \n || prefix can also be just one expected word {RED}directly before{RST} the IP")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {RED}directly after{RST} the IP")
-    in2 = input(f"{YEL}>{RST} ")
-
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 6:
+        in1 = repeats.get_string1()
+        in2 = repeats.get_string2()
+        cmd1 = repeats.get_cmd()
+    else: 
+        print(f"Enter the {RED}prefix string{RST} for querying.\n\n \n Example (in yellow): {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 any eq 22{RST} \n || prefix can also be just one expected word {RED}directly before{RST} the IP")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {RED}directly after{RST} the IP")
+        in2 = input(f"{YEL}>{RST} ")
+        repeats.set_string2(in2)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_cmd(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -294,10 +393,16 @@ def opt6(devs, key):
 
 # for searching strings
 def opt7(devs, key):
-    print(f"Enter the string to be searched across the devices\n Example: {GRN}snmp-server enable service{RST}")
-    in1 = input(f"{YEL}>{RST} ")
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
-    cmd1 = input(f"{YEL}>{RST} ")
+    if repeats.get_string1 and repeats.get_func() == 7:
+        in1 = repeats.get_string1()
+        cmd1 = repeats.get_cmd()
+    else: 
+        print(f"Enter the string to be searched across the devices\n Example: {GRN}snmp-server enable service{RST}")
+        in1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(in1)
+        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
+        cmd1 = input(f"{YEL}>{RST} ")
+        repeats.set_string1(cmd1)
 
     if 'show' not in cmd1:
         print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
@@ -399,7 +504,6 @@ def cache(optX):
         dict0[optX](cacheObj.get_devs(), cacheObj.get_key())
 
 def main():
-
     while True:
         menus()
         choice1 = input(f"{YEL}>{RST} ")
@@ -413,27 +517,37 @@ def main():
         elif choice1 == '1':
             cache(1)
             sleep(2)
+            repeats.set_func(1)
         elif choice1 == '2':
             cache(2)
             sleep(2)
+            repeats.set_func(2)
         elif choice1 == '3':
             cache(3)
             sleep(2)
+            repeats.set_func(3)
         elif choice1 == '4':
             cache(4)
             sleep(2)
+            repeats.set_func(4)
         elif choice1 == '5':
             cache(5)
             sleep(2)
+            repeats.set_func(5)
         elif choice1 == '6':
             cache(6)
             sleep(2)
+            repeats.set_func(6)
         elif choice1 == '7':
             cache(7)
             sleep(2)
+            repeats.set_func(7)
         elif choice1 == '8':
             cache(8)
             sleep(2)
+            repeats.set_func(8)
+        elif choice1.lower() == 'r':
+            repeater()
         elif choice1.lower() == 'n':
             print(f"\n\n {RED}Clearing the Device list!\n{RST}")
             cacheObj.set_devs()
