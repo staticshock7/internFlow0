@@ -17,26 +17,31 @@ logged = False
 
 # prints the menu for the user
 def menus():
-    print(f"\n{MAG}{'='*75}{RST}")
-    print(f"\nSelect your query type: \n")
-    print(f"{MAG}0.{RST} To run a {GRN}show config{RST} command against {GRN}a possible good sample device{RST}. [{RED}Not Repeatable{RST}]")
-    print(f"{MAG}1.{RST} Prefix \t+ \tSpecific IP")
-    print(f"{MAG}2.{RST} Prefix \t+ \t{CYN}RegEx IP{RST}")
-    print(f"{MAG}3.{RST} Specific IP \t+ \tSuffix")
-    print(f"{MAG}4.{RST} {CYN}RegEx IP{RST} \t+ \tSuffix")
-    print(f"{MAG}5.{RST} Prefix \t+ \tSpecific IP \t+ Suffix")
-    print(f"{MAG}6.{RST} Prefix \t+ \t{CYN}RegEx IP{RST} \t+ Suffix")
-    print(f"{MAG}7.{RST} String search")
-    print(f"{MAG}8.{RST} Download configs  [{RED}Not Repeatable{RST}]")
-    print(f"\n{MAG}8.{RST} Enter \t{RED}R{RST} \t to {YEL}repeat{RST} the last function!")
-    print(f"{MAG}8.{RST} Enter \t{RED}N{RST} \t to {YEL}renew{RST} device list!")
-    print(f"{MAG}9.{RST} Enter \t{RED}Q{RST} \t to {YEL}quit{RST}\n")
+    print(f"\n{MAG}{'='*30} DEVICE QUERY MENU {'='*30}{RST}")
+    print(f"""
+{GRN}╔════════════════════════════════════════════════════════════════════\t╗
+║ 0. 🔍  Run a {YEL}show{RST} command on a single test device[{RED}Not Repeatable{RST}]\t║
+║ 1. 🧩  Match {CYN}prefix{RST} string directly {YEL}before{RST} an IP (exact match)\t║
+║ 2. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST}\t\t\t║
+║ 3. 🧩  Match {CYN}suffix{RST} string directly {YEL}after{RST} an IP (exact match)\t\t║
+║ 4. 🔬  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t║
+║ 5. 🎯  Match full line: {CYN}prefix + IP + suffix{RST} (exact match)\t\t║
+║ 6. 🧠  Match {CYN}prefix + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
+║ 7. 🔎  Search for any {CYN}string{RST} in command output\t\t\t║
+║ 8. 📥  Download full config output to files\t[{RED}Not Repeatable{RST}]\t║
+╚════════════════════════════════════════════════════════════════════\t╝
+
+{YEL}Other Commands:{RST}
+  {CYN}R{RST} – 🔁  Repeat the last function
+  {CYN}N{RST} – 🔄  Load a new device list
+  {CYN}Q{RST} – ❌  Quit the program
+""")
 
 # dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
     arr1 = []
     while True:
-        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
+        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {CYN}XXXX4400 XXXX4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
         try:
             if path.exists(var1):
                 print(f"\n\n{"="*25} Path exists — Continuing... {"="*25}\n")
@@ -95,7 +100,7 @@ def ssh_func(dev, key, cmd):
 
 # sampling command output
 def opt0():
-    dev = input(f"{RED}>>>{RST} Enter device (e.g. {MAG}LBEPOL4400{RST})\n{YEL}>{RST} ")
+    dev = input(f"{RED}>>>{RST} Enter device (e.g. {CYN}LBEPOL4400{RST})\n{YEL}>{RST} ")
     key = getpass('Enter the SSH password: ')
 
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
@@ -108,6 +113,8 @@ def opt0():
         output = ssh_func(dev, key, cmd1)
         print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
         print(f"\n{CYN}{output}{RST}")
+    global logged
+    logged = False
 
 class repeat:
     def __init__(self):
@@ -507,12 +514,8 @@ def main():
     while True:
         menus()
         choice1 = input(f"{YEL}>{RST} ")
-
         if choice1 == '0':
-            if logged == True:
-                opt7(cached_devs, cached_key)
-            else:
-                cached_devs, cached_key = opt7(devs=dev_list(), key=getpass('Enter the SSH password: '))
+            opt0()
             sleep(2)
         elif choice1 == '1':
             cache(1)
