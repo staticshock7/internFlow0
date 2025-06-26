@@ -1,11 +1,11 @@
 from time import sleep
 from datetime import datetime
 from paramiko import SSHClient, AutoAddPolicy
-import socket
+from socket import gaierror
 from getpass import getpass
 from os import path, makedirs
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from re import findall, sub
+from re import findall
 # Terminal color codes
 RED = "\033[31m"
 GRN = "\033[32m"
@@ -13,7 +13,7 @@ YEL = "\033[33m"
 MAG = "\033[35m"
 CYN = "\033[36m"
 RST = "\033[0m"
-
+logged = False
 
 # prints the menu for the user
 def menus():
@@ -27,13 +27,14 @@ def menus():
     print(f"{MAG}6.{RST} Prefix \t+ \t{CYN}RegEx IP{RST} \t+ Suffix")
     print(f"{MAG}7.{RST} String search")
     print(f"{MAG}8.{RST} Download configs")
-    print(f"\n{MAG}9.{RST} Enter \t{RED}Q{RST} \t to quit\n")
+    print(f"\n{MAG}8.{RST} Enter \t{RED}N{RST} \t to renew device list!")
+    print(f"{MAG}9.{RST} Enter \t{RED}Q{RST} \t to quit\n")
 
 # dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
     arr1 = []
     while True:
-        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {MAG}XXXX4400 XXXX4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
+        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {MAG}LBEPOL4400 LBEPOL4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
         try:
             if path.exists(var1):
                 print("\n\n============= Path exists — Continuing... =============\n")
@@ -66,7 +67,9 @@ def ssh_func(dev, key, cmd):
         recv = ""
         shell.send(f"{cmd}\n")
         sleep(1)
-
+        
+        global logged
+        logged = True
         while True:
             if shell.recv_ready:
                 recv = shell.recv(1024).decode()
@@ -77,7 +80,7 @@ def ssh_func(dev, key, cmd):
             if recv.strip().endswith('>') or recv.strip().endswith('#'):
                 break
 
-    except socket.gaierror as e:
+    except gaierror as e:
         print(f"\n{RED}Invalid Host:{RST} {dev}. Resolution failed: {e}")
         return f"[ERR] {dev}: {e}"
     except Exception as e:
@@ -85,10 +88,10 @@ def ssh_func(dev, key, cmd):
         return f"[ERR] {dev}: {e}"
     finally:
         ssh.close()
-    
+
     return output
 
-
+# sampling command output
 def opt0():
     dev = input(f"{RED}>>>{RST} Enter device (e.g. {MAG}LBEPOL4400{RST})\n{YEL}>{RST} ")
     key = getpass('Enter the SSH password: ')
@@ -105,8 +108,8 @@ def opt0():
         print(f"\n{CYN}{output}{RST}")
 
 
-def opt1():
-    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST} || prefix can also be just one expected word directly before the IP: {YEL}tcp{RST}")
+def opt1(devs, key):
+    print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word directly before the IP: {YEL}tcp{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
@@ -116,10 +119,6 @@ def opt1():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        # get the ssh pass
-        key = getpass('Enter the SSH password: ')
-
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i 
                     for i in devs
@@ -135,9 +134,9 @@ def opt1():
                     print(f"✔️  {GRN}MATCH{RST} → {YEL}{device}{RST}")
                 else:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{device}{RST}")
+    return devs, key
 
-
-def opt2():
+def opt2(devs, key):
     print(f"Enter the {RED}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
@@ -148,8 +147,6 @@ def opt2():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -166,9 +163,10 @@ def opt2():
                         matched = True
                 if not matched:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+    return devs, key
 
 # may remove opt3, as it is functionally the same as opt1, but may be user friendly, conceptually
-def opt3():
+def opt3(devs, key):
     print(f"Enter the suffix string including the IP for querying.\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
@@ -179,8 +177,6 @@ def opt3():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -194,10 +190,10 @@ def opt3():
                     print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
                 else:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
-
+    return devs, key
 
 # swapped the regex of opt2 around
-def opt4():
+def opt4(devs, key):
     print(f"Enter the {RED}string suffix{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
@@ -208,8 +204,6 @@ def opt4():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -231,10 +225,10 @@ def opt4():
 
                 if not matched:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
-
+    return devs, key
         
 # also functionally the same as opt1, but may be user friendly, conceptually
-def opt5():
+def opt5(devs, key):
     print(f"Enter the {RED}entire string including the IP{RST} for querying.\n Example: {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
@@ -245,8 +239,6 @@ def opt5():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -260,9 +252,10 @@ def opt5():
                     print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
                 else:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+    return devs, key
 
 # for searching string + REGEX IP + string
-def opt6():
+def opt6(devs, key):
     print(f"Enter the {RED}prefix string{RST} for querying.\n\n \n Example (in yellow): {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 any eq 22{RST} \n || prefix can also be just one expected word {RED}directly before{RST} the IP")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {RED}directly after{RST} the IP")
@@ -276,8 +269,6 @@ def opt6():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -299,9 +290,10 @@ def opt6():
                         matched = True
                 if not matched:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+    return devs, key
 
 # for searching strings
-def opt7():
+def opt7(devs, key):
     print(f"Enter the string to be searched across the devices\n Example: {GRN}snmp-server enable service{RST}")
     in1 = input(f"{YEL}>{RST} ")
     print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
@@ -312,8 +304,6 @@ def opt7():
         sleep(4)
         main()
     else:
-        devs = dev_list()
-        key = getpass('Enter the SSH password: ')
         with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
 
@@ -330,11 +320,9 @@ def opt7():
                         matched = True
                 if not matched:
                     print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}") 
-
+    return devs, key
 # downloading the configs
-def opt8():
-    devs = dev_list()
-    key = getpass('Enter the SSH password: ')
+def opt8(devs, key):
     cmd1 = input(f"Enter the show config command for your system:\n{YEL}>{RST} ")
     with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, cmd1):i for i in devs}
@@ -373,8 +361,42 @@ def opt8():
             except Exception as e:
                 print(f"Unable to access {RED}{file}{RST} due to {RED}{e}{RST}")
 
-    ## check if the user would like to save the config to a folder
+    return devs, key
 
+# to store and call data from the dev_list() and the getpass()
+class cached:
+    def __init__(self):
+        self.devs = None
+        self.key = None
+    def set_devs(self):
+        self.devs = dev_list()
+    def set_key(self):
+        self.key = getpass('Enter the SSH passowrd: ')
+    def get_devs(self):
+        return self.devs
+    def get_key(self):
+        return self.key
+    
+cacheObj = cached() # guess I gotta leave an instance of the cached class out here for now
+
+def cache(optX):
+    # for selecting the correct opt function
+    dict0 = {
+        1: opt1,
+        2: opt2,
+        3: opt3,
+        4: opt4,
+        5: opt5,
+        6: opt6,
+        7: opt7,
+        8: opt8
+    }
+    if logged == True:
+        dict0[optX](cacheObj.get_devs(), cacheObj.get_key())
+    else:
+        cacheObj.set_devs()
+        cacheObj.set_key()
+        dict0[optX](cacheObj.get_devs(), cacheObj.get_key())
 
 def main():
 
@@ -383,41 +405,48 @@ def main():
         choice1 = input(f"{YEL}>{RST} ")
 
         if choice1 == '0':
-            opt0()
-            sleep(3)
+            if logged == True:
+                opt7(cached_devs, cached_key)
+            else:
+                cached_devs, cached_key = opt7(devs=dev_list(), key=getpass('Enter the SSH password: '))
+            sleep(2)
         elif choice1 == '1':
-            opt1()
-            sleep(5)
+            cache(1)
+            sleep(2)
         elif choice1 == '2':
-            opt2()
-            sleep(5)
+            cache(2)
+            sleep(2)
         elif choice1 == '3':
-            opt3()
-            sleep(5)
+            cache(3)
+            sleep(2)
         elif choice1 == '4':
-            opt4()
-            sleep(5)
+            cache(4)
+            sleep(2)
         elif choice1 == '5':
-            opt5()
-            sleep(5)
+            cache(5)
+            sleep(2)
         elif choice1 == '6':
-            opt6()
-            sleep(5)
+            cache(6)
+            sleep(2)
         elif choice1 == '7':
-            opt7()
-            sleep(5)
+            cache(7)
+            sleep(2)
         elif choice1 == '8':
-            opt8()
-            sleep(5)
+            cache(8)
+            sleep(2)
+        elif choice1.lower() == 'n':
+            print(f"\n\n {RED}Clearing the Device list!\n{RST}")
+            cacheObj.set_devs()
+            sleep(1)
         elif choice1.lower() == 'q':
             print(f"\n\n {RED}Exiting...{RST}")
             sleep(1)
             break
         else:
-            print(f"\nChoose a an option or use {RED}q{RST} to exit.")
+            print(f"\nChoose a an option or use {RED}Q{RST} to exit.")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Exiting")
+        print("\n\nKeyboard Interupt — Exiting")
