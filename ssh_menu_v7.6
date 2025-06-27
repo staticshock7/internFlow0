@@ -23,7 +23,7 @@ def menus():
 ║ 0. 🔍  Run a {YEL}show{RST} command on a single test device[{CYN}Not Repeatable{RST}]\t║
 ║ 1. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST} (flexible match)\t║
 ║ 2. 🧩  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t║
-║ 3. 🧠  Match {CYN}prefix + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
+║ 3. 🧠  Match {CYN}prefix{RST} + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
 ║ 4. 🔎  Search for any {CYN}string{RST} in command output (exact match)\t\t║
 ║ 5. 📥  Download full config output to files\t[{CYN}Not Repeatable{RST}]\t║
 ╚════════════════════════════════════════════════════════════════════\t╝
@@ -119,6 +119,7 @@ class repeat:
         self.string2 = None
         self.cmd = None
         self.func = None
+        self.choice = None # initializing the choice attribute
 
     # self explanatory
     def set_string1(self, string1):
@@ -129,6 +130,13 @@ class repeat:
         self.cmd = cmd1
     def set_func(self,func):
         self.func = func
+
+    # testing: needed a way to save the main menu last choice 
+    # to prevent a hiccup when manually calling the same function a second time
+    def set_lastChoice(self, choice):
+        self.choice = choice
+    def get_lastChoice(self):
+        return self.choice
 
     def get_string1(self):
         return self.string1
@@ -160,6 +168,7 @@ def repeater():
         sleep(2)
     else:
         print(f"\n{CYN}There is nothing available to repeat, right now!\n")
+        sleep(1)
     
 
 def opt1(devs, key):
@@ -190,7 +199,7 @@ def opt1(devs, key):
                 output = output.splitlines()
                 matched = False # used for returning a singular NO MATCH if the for j loop returns no match
                 for j in output:
-                    if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
+                    if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)): # using a non-capture group combined with the variable to search j
                         print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
                 if not matched:
@@ -401,6 +410,15 @@ def main():
     while True:
         menus()
         choice1 = input(f"{YEL}>{RST} ")
+
+        # comparing the stored last choice to the present choice to prevent the set_func from
+        # triggering the first if statement in each of the functions (occurred when the function had been called
+        # at least once before)
+        if repeats.get_lastChoice() == choice1:
+            repeats.set_func(None)
+        else:
+            repeats.set_lastChoice(choice1)
+
         if choice1 == '0':
             opt0()
             sleep(2)
