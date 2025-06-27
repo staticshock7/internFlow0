@@ -19,14 +19,14 @@ logged = False
 def menus():
     print(f"\n{MAG}{'='*30} DEVICE QUERY MENU {'='*30}{RST}")
     print(f"""
-{GRN}╔════════════════════════════════════════════════════════════════════\t╗
-║ 0. 🔍  Run a {YEL}show{RST} command on a single test device[{CYN}Not Repeatable{RST}]\t║
-║ 1. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST} (flexible match)\t║
-║ 2. 🧩  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t║
-║ 3. 🧠  Match {CYN}prefix{RST} + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
-║ 4. 🔎  Search for any {CYN}string{RST} in command output (exact match)\t\t║
-║ 5. 📥  Download full config output to files\t[{CYN}Not Repeatable{RST}]\t║
-╚════════════════════════════════════════════════════════════════════\t╝
+{GRN}╔═══════════════════════════════════════════════════════════════════════╗{RST}
+{GRN}║{RST} 0. 🔍  Run a {YEL}show{RST} command on a single test device[{CYN}Not Repeatable{RST}]\t{GRN}║{RST}
+{GRN}║{RST} 1. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST} (flexible match)\t{GRN}║{RST}
+{GRN}║{RST} 2. 🧩  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t{GRN}║{RST}
+{GRN}║{RST} 3. 🧠  Match {CYN}prefix{RST} + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t{GRN}║{RST}
+{GRN}║{RST} 4. 🔎  Search for any {CYN}string{RST} in command output (exact match)\t\t{GRN}║{RST}
+{GRN}║{RST} 5. 📥  Download full config output to files\t[{CYN}Not Repeatable{RST}]\t{GRN}║{RST}
+{GRN}╚═══════════════════════════════════════════════════════════════════════╝{RST}
 
 {YEL}Other Commands:{RST}
   {CYN}R{RST} — 🔁  Repeat the last function
@@ -175,10 +175,10 @@ def opt1(devs, key):
         in1 = repeats.get_string1()
         cmd1 = repeats.get_cmd()
     else: 
-        print(f"Enter the {CYN}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {CYN}directly before{RST} the IP: {YEL}tcp{RST}")
+        print(f"Enter the {CYN}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n** prefix can also be just one expected word {CYN}directly before{RST} the IP: {YEL}tcp{RST}")
         in1 = input(f"{YEL}>{RST} ")
         repeats.set_string1(in1)
-        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.")
+        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.\nExample: {YEL}show config int man{RST}")
         cmd1 = input(f"{YEL}>{RST} ")
         repeats.set_cmd(cmd1)
 
@@ -216,7 +216,7 @@ def opt2(devs, key):
         print(f"Enter the {CYN}string suffix{RST} for querying.\n\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST}\n||suffix can also be just one expected word {CYN}directly after{RST} the IP: {YEL}any{RST}")
         in1 = input(f"{YEL}>{RST} ")
         repeats.set_string1(in1) # stores the inprt in teh repeats instance for repetition later if wanted
-        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.")
+        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.\nExample: {YEL}show config int man{RST}")
         cmd1 = input(f"{YEL}>{RST} ")
         repeats.set_cmd(cmd1) # stores the cmd in teh repeats instance for repetition later if wanted
 
@@ -264,7 +264,7 @@ def opt3(devs, key):
         print(f"Enter the {CYN}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {CYN}directly after{RST} the IP")
         in2 = input(f"{YEL}>{RST} ")
         repeats.set_string2(in2)
-        print(f"Enter the {CYN}specific{RST} show command that contains the data you seek.")
+        print(f"Enter the {CYN}specific{RST} show command that contains the data you seek.\nExample: {YEL}show config int man{RST}")
         cmd1 = input(f"{YEL}>{RST} ")
         repeats.set_cmd(cmd1)
 
