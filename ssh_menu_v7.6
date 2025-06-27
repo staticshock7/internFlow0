@@ -29,9 +29,9 @@ def menus():
 ╚════════════════════════════════════════════════════════════════════\t╝
 
 {YEL}Other Commands:{RST}
-  {CYN}R{RST} – 🔁  Repeat the last function
-  {CYN}N{RST} – 🔄  Load a new device list
-  {CYN}Q{RST} – ❌  Quit the program
+  {CYN}R{RST} — 🔁  Repeat the last function
+  {CYN}N{RST} — 🔄  Load a new device list
+  {CYN}Q{RST} — ❌  Quit the program
 """)
 
 # dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
@@ -170,7 +170,6 @@ def repeater():
         print(f"\n{CYN}There is nothing available to repeat, right now!\n")
         sleep(1)
     
-
 def opt1(devs, key):
     if repeats.get_string1 and repeats.get_func() == 1:
         in1 = repeats.get_string1()
@@ -326,7 +325,7 @@ def opt4(devs, key):
                 output = output.splitlines()
                 matched = False # used for returning a singular NO MATCH if the for j loop returns no match
                 for j in output:
-                    if (findall(rf"\b(?:\w*)\s*{in1}\s*(?:\w*)\b", j)):
+                    if (findall(rf"\b(?:\w*)-*_*\s*{in1}-*_*\s*(?:\w*)\b", j)):
                         print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
                 if not matched:
