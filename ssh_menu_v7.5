@@ -7,7 +7,7 @@ from os import path, makedirs
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from re import findall
 # Terminal color codes
-RED = "\033[31m"
+CYN = "\033[31m"
 GRN = "\033[32m"
 YEL = "\033[33m"
 MAG = "\033[35m"
@@ -20,15 +20,12 @@ def menus():
     print(f"\n{MAG}{'='*30} DEVICE QUERY MENU {'='*30}{RST}")
     print(f"""
 {GRN}╔════════════════════════════════════════════════════════════════════\t╗
-║ 0. 🔍  Run a {YEL}show{RST} command on a single test device[{RED}Not Repeatable{RST}]\t║
-║ 1. 🧩  Match {CYN}prefix{RST} string directly {YEL}before{RST} an IP (exact match)\t║
-║ 2. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST}\t\t\t║
-║ 3. 🧩  Match {CYN}suffix{RST} string directly {YEL}after{RST} an IP (exact match)\t\t║
-║ 4. 🔬  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t║
-║ 5. 🎯  Match full line: {CYN}prefix + IP + suffix{RST} (exact match)\t\t║
-║ 6. 🧠  Match {CYN}prefix + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
-║ 7. 🔎  Search for any {CYN}string{RST} in command output\t\t\t║
-║ 8. 📥  Download full config output to files\t[{RED}Not Repeatable{RST}]\t║
+║ 0. 🔍  Run a {YEL}show{RST} command on a single test device[{CYN}Not Repeatable{RST}]\t║
+║ 1. 🔬  Match {CYN}prefix{RST} followed by an IP using {YEL}regex{RST} (flexible match)\t║
+║ 2. 🧩  Match IP followed by {CYN}suffix{RST} using {YEL}regex{RST}\t\t\t║
+║ 3. 🧠  Match {CYN}prefix + {YEL}regex IP{RST} + suffix{RST} (flexible match)\t\t║
+║ 4. 🔎  Search for any {CYN}string{RST} in command output (exact match)\t\t║
+║ 5. 📥  Download full config output to files\t[{CYN}Not Repeatable{RST}]\t║
 ╚════════════════════════════════════════════════════════════════════\t╝
 
 {YEL}Other Commands:{RST}
@@ -41,7 +38,7 @@ def menus():
 def dev_list():
     arr1 = []
     while True:
-        var1 = input(f"{RED}>>>{RST} Enter devices (e.g. {CYN}XXXX4400 XXXX4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
+        var1 = input(f"{CYN}>>>{RST} Enter devices (e.g. {CYN}LBEPOL4400 LBEPOL4401{RST}) or a file path with one device per line:\n\n{YEL}>{RST} ")
         try:
             if path.exists(var1):
                 print(f"\n\n{"="*25} Path exists — Continuing... {"="*25}\n")
@@ -49,14 +46,14 @@ def dev_list():
                     arr1 = [line.strip() for line in file if line.strip()]
                     break
         except Exception:
-            print(f"\nIn valid path! Do not enclose the path in {RED}quotes!{RST}")
+            print(f"\nIn valid path! Do not enclose the path in {CYN}quotes!{RST}")
             continue
         else:
             try:
                 arr1 = var1.strip().split() # removes the carriage returns, and adds each to a list
                 break
             except Exception:
-                print(f"{RED}>>>{RST} Invalid input! {RED}Use spaces between devices{RST} Try again.\n")
+                print(f"{CYN}>>>{RST} Invalid input! {CYN}Use spaces between devices{RST} Try again.\n")
                 continue
     print(f"\nDevices to be queried: {GRN}{arr1}{RST}")
         
@@ -88,10 +85,10 @@ def ssh_func(dev, key, cmd):
                 break
 
     except gaierror as e:
-        print(f"\n{RED}Invalid Host:{RST} {dev}. Resolution failed: {e}")
+        print(f"\n{CYN}Invalid Host:{RST} {dev}. Resolution failed: {e}")
         return f"[ERR] {dev}: {e}"
     except Exception as e:
-        print(f"\n{RED}General connection failure:{RST} {e}")
+        print(f"\n{CYN}General connection failure:{RST} {e}")
         return f"[ERR] {dev}: {e}"
     finally:
         ssh.close()
@@ -100,13 +97,13 @@ def ssh_func(dev, key, cmd):
 
 # sampling command output
 def opt0():
-    dev = input(f"{RED}>>>{RST} Enter device (e.g. {CYN}LBEPOL4400{RST})\n{YEL}>{RST} ")
-    key = getpass('Enter the SSH password: ')
+    dev = input(f"{CYN}>>>{RST} Enter device (e.g. {CYN}LBEPOL4400{RST})\n{YEL}>{RST} ")
+    key = getpass(f'{CYN}>>>{RST} Enter the SSH passowrd: \n')
 
-    print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
+    print(f"Enter the {CYN}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
     cmd1 = input(f"{YEL}>{RST} ")
     if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
+        print(f"\n\nPlease enter a {CYN}show{RST} command only!\n\n")
         sleep(4)
         main()
     else:
@@ -159,72 +156,26 @@ def repeater():
         cache(4)
         sleep(2)
     elif repeats.get_func() == 5:
-        cache(5)
-        sleep(2)
-    elif repeats.get_func() == 6:
-        cache(6)
-        sleep(2)
-    elif repeats.get_func() == 7:
-        cache(7)
-        sleep(2)
-    elif repeats.get_func() == 8:
         print(f"\n{YEL}Unable to repeat this function!")
         sleep(2)
     else:
-        print(f"\n{RED}There is nothing available to repeat, right now!\n")
+        print(f"\n{CYN}There is nothing available to repeat, right now!\n")
     
 
 def opt1(devs, key):
-    # checks the instance for Boolean state of get_string
-    if repeats.get_string1() and repeats.get_func() == 1:
-        # print("This ran")
-        # print(bool(repeats.get_string1))
-        in1 = repeats.get_string1() # assigns values for these variables as repetition
-        cmd1 = repeats.get_cmd()
-    else:
-        print(f"\nEnter the prefix string including the IP as seen from the {YEL}show config{RST} output.\n\n Example (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word directly before the IP: {YEL}tcp{RST}")
-        in1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(in1) # stores the input as data for the obj instance
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-        cmd1 = input(f"{YEL}>{RST} ")
-        repeats.set_cmd(cmd1)# stores the input as data for the obj instance
-
-    if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
-        sleep(4)
-        main()
-    else:
-        with ThreadPoolExecutor(max_workers=8) as exe:
-            futures = {exe.submit(ssh_func, i, key, cmd1): i 
-                    for i in devs
-            }
-
-            for future in as_completed(futures):
-                device = futures[future]
-                output = future.result()
-
-                print(f"\n{MAG}{'='*25}{RST} {YEL}{device}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
-            
-                if in1 in output:
-                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{device}{RST}")
-                else:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{device}{RST}")
-    return devs, key
-
-def opt2(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 2:
+    if repeats.get_string1 and repeats.get_func() == 1:
         in1 = repeats.get_string1()
         cmd1 = repeats.get_cmd()
     else: 
-        print(f"Enter the {RED}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {RED}directly before{RST} the IP: {YEL}tcp{RST}")
+        print(f"Enter the {CYN}string prefix{RST} to be queried\n\nExample (in yellow): {YEL}100 permit tcp{RST} {GRN}1.1.1.1 0.0.0.0 any eq 443{RST}\n|| prefix can also be just one expected word {CYN}directly before{RST} the IP: {YEL}tcp{RST}")
         in1 = input(f"{YEL}>{RST} ")
         repeats.set_string1(in1)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
+        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.")
         cmd1 = input(f"{YEL}>{RST} ")
         repeats.set_cmd(cmd1)
 
     if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
+        print(f"\n\nPlease enter a {CYN}show{RST} command only!\n\n")
         sleep(4)
         main()
     else:
@@ -240,138 +191,77 @@ def opt2(devs, key):
                 matched = False # used for returning a singular NO MATCH if the for j loop returns no match
                 for j in output:
                     if (findall(fr"\b{in1}\s*((?:\d{{1,3}}\.){{3}}\d{{1,3}})\b", j)):
-                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
                 if not matched:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
-    return devs, key
-
-# may remove opt3, as it is functionally the same as opt1, but may be user friendly, conceptually
-def opt3(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 3:
-        in1 = repeats.get_string1()
-        cmd1 = repeats.get_cmd()
-    else: 
-        print(f"Enter the suffix string including the IP for querying.\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
-        in1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(in1)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-        cmd1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(cmd1)
-
-    if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
-        sleep(4)
-        main()
-    else:
-        with ThreadPoolExecutor(max_workers=8) as exe:
-            futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
-
-            for future in as_completed(futures):
-                dev = futures[future]
-                output = future.result()
-
-                print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
-
-                if in1 in output:
-                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
-                else:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+                    print(f"✖️  {CYN}NO MATCH{RST} → {YEL}{dev}{RST}")
     return devs, key
 
 # swapped the regex of opt2 around
-def opt4(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 4:
+def opt2(devs, key):
+    # checks the data in repeats instance for any value of string1. Checks if the function being repeated is the one last called
+    if repeats.get_string1 and repeats.get_func() == 2:
         in1 = repeats.get_string1()
         cmd1 = repeats.get_cmd()
     else:     
-        print(f"Enter the {RED}string suffix{RST} for querying.\n\n Example: {GRN}any eq 22{RST}")
+        # gets the string (prefix) for narrowing the search results
+        print(f"Enter the {CYN}string suffix{RST} for querying.\n\nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST}\n||suffix can also be just one expected word {CYN}directly after{RST} the IP: {YEL}any{RST}")
         in1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(in1)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample (in yellow): {GRN}100 permit tcp 1.1.1.1 0.0.0.0{RST} {YEL}any eq 443{RST} || suffix can also be just one expected word {RED}directly after{RST} the IP: {YEL}any{RST}")
+        repeats.set_string1(in1) # stores the inprt in teh repeats instance for repetition later if wanted
+        print(f"\nEnter the {CYN}specific{RST} show command that contains the data you seek.")
         cmd1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(cmd1)
+        repeats.set_cmd(cmd1) # stores the cmd in teh repeats instance for repetition later if wanted
 
+    # limits commands to show commands
     if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
+        print(f"\n\nPlease enter a {CYN}show{RST} command only!\n\n")
         sleep(4)
         main()
     else:
+        # uses concurrent futures to run the searches concurrently for speed
+        # downside is the output is randomly displayed, not alphabetically
         with ThreadPoolExecutor(max_workers=8) as exe:
-            futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
+            futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs} # stores each future with a corresponding device hostname (i)
 
-            for future in as_completed(futures):
-                dev = futures[future]
-                output = future.result()
+            for future in as_completed(futures): # works on the result of each future as soon as it's completed
+                dev = futures[future] # gets the hostname of a future for by calling its index in futures
+                output = future.result() # gathers the result of the future and put it in output for later use
 
                 print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
 
-                output = output.splitlines() # make a list of each line for indexing
+                output = output.splitlines() # make a list of each line for indexing, and easier search
                 # regex for IPs
 
                 matched = False # used for returning a singular NO MATCH if the for j loop returns no match
-
+                # searches the array output for the regex IP
                 for j in output:
                     if (findall(fr"\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in1}\b", j)):
-                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
 
                 if not matched:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+                    print(f"✖️  {CYN}NO MATCH{RST} → {YEL}{dev}{RST}")
     return devs, key
         
-# also functionally the same as opt1, but may be user friendly, conceptually
-def opt5(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 5:
-        in1 = repeats.get_string1()
-        cmd1 = repeats.get_cmd()
-    else:     
-        print(f"Enter the {RED}entire string including the IP{RST} for querying.\n Example: {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST}")
-        in1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(in1)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample: {GRN}show config ip access-list{RST}")
-        cmd1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(cmd1)
-
-    if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
-        sleep(4)
-        main()
-    else:
-        with ThreadPoolExecutor(max_workers=8) as exe:
-            futures = {exe.submit(ssh_func, i, key, cmd1): i for i in devs}
-
-            for future in as_completed(futures):
-                dev = futures[future]
-                output = future.result()
-
-                print(f"\n{MAG}{'='*25}{RST} {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed  
-
-                if in1 in output:
-                    print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST}")
-                else:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
-    return devs, key
-
 # for searching string + REGEX IP + string
-def opt6(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 6:
+def opt3(devs, key):
+    if repeats.get_string1 and repeats.get_func() == 3:
         in1 = repeats.get_string1()
         in2 = repeats.get_string2()
         cmd1 = repeats.get_cmd()
     else: 
-        print(f"Enter the {RED}prefix string{RST} for querying.\n\n \n Example (in yellow): {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 any eq 22{RST} \n || prefix can also be just one expected word {RED}directly before{RST} the IP")
+        print(f"Enter the {CYN}prefix string{RST} for querying.\n\n \n Example (in yellow): {YEL}permit tcp{RST}{GRN} 0.0.0.0 0.0.0.0 any eq 22{RST} \n || prefix can also be just one expected word {CYN}directly before{RST} the IP")
         in1 = input(f"{YEL}>{RST} ")
         repeats.set_string1(in1)
-        print(f"Enter the {RED}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {RED}directly after{RST} the IP")
+        print(f"Enter the {CYN}suffix string{RST} for querying.\n\n \n Example (in yellow): {GRN}permit tcp 0.0.0.0 0.0.0.0 {RST}{YEL}any eq 22{RST} \n || suffix can also be just one expected word {CYN}directly after{RST} the IP")
         in2 = input(f"{YEL}>{RST} ")
         repeats.set_string2(in2)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek.")
+        print(f"Enter the {CYN}specific{RST} show command that contains the data you seek.")
         cmd1 = input(f"{YEL}>{RST} ")
         repeats.set_cmd(cmd1)
 
     if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
+        print(f"\n\nPlease enter a {CYN}show{RST} command only!\n\n")
         sleep(4)
         main()
     else:
@@ -392,27 +282,27 @@ def opt6(devs, key):
 
                 for j in output:
                     if (findall(fr"{in1}\s*\b((?:\d{{1,3}}\.){{3}}\d{{1,3}})\s*{in2}\b", j)):
-                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
                 if not matched:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}")
+                    print(f"✖️  {CYN}NO MATCH{RST} → {YEL}{dev}{RST}")
     return devs, key
 
 # for searching strings
-def opt7(devs, key):
-    if repeats.get_string1 and repeats.get_func() == 7:
+def opt4(devs, key):
+    if repeats.get_string1 and repeats.get_func() == 4:
         in1 = repeats.get_string1()
         cmd1 = repeats.get_cmd()
     else: 
         print(f"Enter the string to be searched across the devices\n Example: {GRN}snmp-server enable service{RST}")
         in1 = input(f"{YEL}>{RST} ")
         repeats.set_string1(in1)
-        print(f"Enter the {RED}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
+        print(f"Enter the {CYN}specific{RST} show command that contains the data you seek. \nExample ): {GRN}show config banner{RST}")
         cmd1 = input(f"{YEL}>{RST} ")
-        repeats.set_string1(cmd1)
+        repeats.set_cmd(cmd1)
 
     if 'show' not in cmd1:
-        print(f"\n\nPlease enter a {RED}show{RST} command only!\n\n")
+        print(f"\n\nPlease enter a {CYN}show{RST} command only!\n\n")
         sleep(4)
         main()
     else:
@@ -428,13 +318,13 @@ def opt7(devs, key):
                 matched = False # used for returning a singular NO MATCH if the for j loop returns no match
                 for j in output:
                     if (findall(rf"\b(?:\w*)\s*{in1}\s*(?:\w*)\b", j)):
-                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {RED}>>>{RST} {j}")
+                        print(f"✔️  {GRN}MATCH{RST} → {YEL}{dev}{RST} {CYN}>>>{RST} {j}")
                         matched = True
                 if not matched:
-                    print(f"✖️  {RED}NO MATCH{RST} → {YEL}{dev}{RST}") 
+                    print(f"✖️  {CYN}NO MATCH{RST} → {YEL}{dev}{RST}") 
     return devs, key
 # downloading the configs
-def opt8(devs, key):
+def opt5(devs, key):
     cmd1 = input(f"Enter the show config command for your system:\n{YEL}>{RST} ")
     with ThreadPoolExecutor(max_workers=8) as exe:
         futures = {exe.submit(ssh_func, i, key, cmd1):i for i in devs}
@@ -449,7 +339,7 @@ def opt8(devs, key):
             makedirs(in2, exist_ok=True)
             print(f"Created {GRN}{in2}{RST}")
         except Exception as e:
-            print(f"Unable to create {RED}{in2}{RST} due to {RED}{e}{RST}")
+            print(f"Unable to create {CYN}{in2}{RST} due to {CYN}{e}{RST}")
     # End of Creating a directory
 
     for future in as_completed(futures):
@@ -463,7 +353,7 @@ def opt8(devs, key):
                     file.write(output)
                     print(f"\n{MAG}{'='*25}{RST} Written {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
             except Exception as e:
-                print(f"Unable to access {RED}{file}{RST} due to {RED}{e}{RST}")
+                print(f"Unable to access {CYN}{file}{RST} due to {CYN}{e}{RST}")
         else:
             try:
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -471,7 +361,7 @@ def opt8(devs, key):
                     file.write(output)
                     print(f"\n{MAG}{'='*25}{RST} Written {YEL}{dev}{RST} {MAG}{'='*25}{RST}") # banner for each device results printed
             except Exception as e:
-                print(f"Unable to access {RED}{file}{RST} due to {RED}{e}{RST}")
+                print(f"Unable to access {CYN}{file}{RST} due to {CYN}{e}{RST}")
 
     return devs, key
 
@@ -483,7 +373,7 @@ class cached:
     def set_devs(self):
         self.devs = dev_list()
     def set_key(self):
-        self.key = getpass('Enter the SSH passowrd: ')
+        self.key = getpass(f'{CYN}>>>{RST} Enter the SSH passowrd: \n')
     def get_devs(self):
         return self.devs
     def get_key(self):
@@ -499,9 +389,6 @@ def cache(optX):
         3: opt3,
         4: opt4,
         5: opt5,
-        6: opt6,
-        7: opt7,
-        8: opt8
     }
     if logged == True:
         dict0[optX](cacheObj.get_devs(), cacheObj.get_key())
@@ -519,48 +406,36 @@ def main():
             sleep(2)
         elif choice1 == '1':
             cache(1)
-            sleep(2)
             repeats.set_func(1)
+            sleep(2)
         elif choice1 == '2':
             cache(2)
-            sleep(2)
             repeats.set_func(2)
+            sleep(2)
         elif choice1 == '3':
             cache(3)
-            sleep(2)
             repeats.set_func(3)
+            sleep(2)
         elif choice1 == '4':
             cache(4)
-            sleep(2)
             repeats.set_func(4)
+            sleep(2)
         elif choice1 == '5':
             cache(5)
-            sleep(2)
             repeats.set_func(5)
-        elif choice1 == '6':
-            cache(6)
             sleep(2)
-            repeats.set_func(6)
-        elif choice1 == '7':
-            cache(7)
-            sleep(2)
-            repeats.set_func(7)
-        elif choice1 == '8':
-            cache(8)
-            sleep(2)
-            repeats.set_func(8)
         elif choice1.lower() == 'r':
             repeater()
         elif choice1.lower() == 'n':
-            print(f"\n\n {RED}Clearing the Device list!\n{RST}")
+            print(f"\n\n {CYN}Clearing the Device list!\n{RST}")
             cacheObj.set_devs()
             sleep(1)
         elif choice1.lower() == 'q':
-            print(f"\n\n {RED}Exiting...{RST}")
+            print(f"\n\n {CYN}Exiting...{RST}")
             sleep(1)
             break
         else:
-            print(f"\nChoose a an option or use {RED}Q{RST} to exit.")
+            print(f"\nChoose a an option or use {CYN}Q{RST} to exit.")
 
 if __name__ == "__main__":
     try:
