@@ -1,16 +1,73 @@
 from time import sleep
+from os import path
 from paramiko import SSHClient, AutoAddPolicy
 from socket import gaierror
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from re import findall
+import getpass
 # Terminal color codes
-CYN = "\033[31m"
+RED = "\033[31m"
 GRN = "\033[32m"
 YEL = "\033[33m"
 MAG = "\033[35m"
 CYN = "\033[36m"
 RST = "\033[0m"
-logged = False
+
+
+class cable:
+    def __init__(self):
+        self.lb_state = None
+        self.fw_state = None
+        self.rtr_state = None
+        self.lb_port = None
+        self.fw_port = None
+        self.rtr_port = None
+
+    def store_lb_state(self, updown):
+        self.lb_state = updown
+    def store_fw_state(self, updown):
+        self.fw_state = updown
+    def store_rtr_state(self, conn_stat):
+        self.store_rtr_state = conn_stat
+    def store_lb_port(self, port):
+        self.store_lb_port = port
+    def store_fw_port(self, port):
+        self.store_lb_port = port
+    def store_rtr_port(self, port):
+        self.store_lb_port = port
+
+    def get_lb_state(self):
+        return self.lb_state
+    def get_fw_state(self):
+        return self.fw_state
+    def get_rtr_state(self):
+        return self.rtr_state
+    def get_lb_port(self):
+        return self.lb_port
+    def get_fw_port(self):
+        return self.fw_port
+    def get_rtr_port(self):
+        return self.rtr_port
+
+class devdev:
+    def __init__(self):
+        self.devlist = None
+        self.fw_list = None
+        self.lb_list = None
+
+    def set_devlist(self, devs):
+        self.devlist = devs
+    def set_fw_list(self, fws):
+        self.fw_list = fws
+    def set_lb_list(self, lbs):
+        self.lb_list = lbs
+
+    def get_devlist(self):
+        return self.dev_list
+    def get_fw_list(self):
+        return self.fw_list
+    def get_lb_list(self):
+        return self.lb_list
 
 # prints the menu for the user
 def menus():
@@ -18,6 +75,44 @@ def menus():
     print(f"""
 
 """)
+
+def suppliedPorts1():
+    print(f"\n{MAG}{'='*30} Enter the ports: {'='*30}{RST}")
+    print(f"1. Ports allocated to LBs/FWs\n2. Ports allocated to Router-Side\n3. Default Ports")
+    return input(f"{CYN}>>> {RST}")
+def suppliedPorts2():
+    print(f"\n{MAG}{'='*30} Select the device {'='*30}{RST}")
+    print(f"1. LB ports\n2. FW Ports")
+    return input(f"{CYN}>>> {RST}")
+def suppliedPorts3(dev=str):
+    print(f"\n{MAG}{'='*30} Select mode: {'='*30}{RST}")
+    print(f"1. {dev} port batch\n3. {dev} port individual")
+    return input(f"{CYN}>>> {RST}")
+def defaultPorts():
+    ""
+
+def menu2():
+    while True:
+        if suppliedPorts1() == '1' or suppliedPorts1() == '2': # lb/fw menu nex
+            suppliedPorts2()
+        elif suppliedPorts1 == '3':
+            defaultPorts() # complete this
+        else:
+            break
+
+    while True:
+        if suppliedPorts2() == '1' and suppliedPorts1() == '1':
+            suppliedPorts3("LB")
+        elif suppliedPorts2() == '2' and suppliedPorts1() == '1':
+            suppliedPorts3("FW")
+        elif suppliedPorts1() == "1":
+            suppliedPorts3("RTR")
+    while True:
+        if suppliedPorts1() == '1' and suppliedPorts2() == '1' and suppliedPorts3() == '1':
+            
+        elif suppliedPorts1() == '2' and suppliedPorts2() == '1':
+            suppl
+
 
 # dev_list function recieves the list of devices to be searched; or it receives theh path to the file containing a similar list
 def dev_list():
@@ -88,7 +183,6 @@ def flipflop(dev, key1, state, int_num):
         ssh.connect(f"{dev}.mgmt", username='admin', password=key1)
         shell = ssh.invoke_shell()
         sleep(2)
-        output = ""
         recv = ""
 
         if state == "up":
@@ -98,6 +192,8 @@ def flipflop(dev, key1, state, int_num):
             sleep(0.5)
             shell.send("disable")
             sleep(1)
+            if shell.recv_ready:
+                recv = shell.recv(1024).decode()
         elif state == "down":
             shell.send("config t\n")
             sleep(1)
@@ -105,11 +201,11 @@ def flipflop(dev, key1, state, int_num):
             sleep(0.5)
             shell.send("enable")
             sleep(1)
+            if shell.recv_ready:
+                recv = shell.recv(1024).decode()
         else:
             print("Unable to change interface")
-
-        if shell.recv_ready:
-            recv = shell.recv(1024).decode()
+            recv = "No output received"
 
         return recv
 
@@ -133,15 +229,23 @@ def rtrShow(dev, key2, cableObj, lb="", fw=""):
 
         # checks if lb place was filled to determine which show cmd
         if lb:
-            shell.send(f"show interface e{lb}") # show specific interface range for lb
-            sleep(1)
-            if shell.recv_ready:
-                recv = shell.recv(1024).decode()
-                recv.splitlines
-                line1 = findall(r"\bnotconnect\b", recv)
-                cableObj.store_rtr_port(findall(r"\bEth\d\b", line1)) # store disconnected router
-
-
+            shell.send(f"show interface e1-{lb}") # show specific interface range for lb
+            sleep(2)
+            #if shell.recv_ready:
+            recv = shell.recv(1024).decode()
+            line1 = findall(r"\bnot\s*connected\b", recv.splitlines())
+            cableObj.store_rtr_port(''.join(findall(r"\b\d{2}\b", line1))) # store disconnected router
+        elif fw:
+            shell.send(f"show interface e1-{fw}") # show specific interface range for fw
+            sleep(2)
+            #if shell.recv_ready:
+            recv = shell.recv(1024).decode()
+            line1 = findall(r"\bnot\s*connected\b", recv.splitlines())
+            cableObj.store_rtr_port(''.join(findall(r"\b\d{2}\b", line1))) # store disconnected router
+        else:
+            print(f"{RED}rtrShow function erroe{RST}")
+            
+        
     except gaierror as e:
         print(f"\n{CYN}Invalid Host:{RST} {dev}. Resolution failed: {e}")
         return f"[ERR] {dev}: {e}"
@@ -152,45 +256,10 @@ def rtrShow(dev, key2, cableObj, lb="", fw=""):
         ssh.close()
 
 
-class cable:
-    def __init__(self):
-        self.lb_state = None
-        self.fw_state = None
-        self.rtr_state = None
-        self.lb_port = None
-        self.fw_port = None
-        self.rtr_port = None
-
-    def store_lb_state(self, updown):
-        self.lb_state = updown
-    def store_fw_state(self, updown):
-        self.fw_state = updown
-    def store_rtr_state(self, conn_stat):
-        self.store_rtr_state = conn_stat
-    def store_lb_port(self, port):
-        self.store_lb_port = port
-    def store_fw_port(self, port):
-        self.store_lb_port = port
-    def store_rtr_port(self, port):
-        self.store_lb_port = port
-
-    def get_lb_state(self):
-        return self.lb_state
-    def get_fw_state(self):
-        return self.fw_state
-    def get_rtr_state(self):
-        return self.rtr_state
-    def get_lb_port(self):
-        return self.lb_port
-    def get_fw_port(self):
-        return self.fw_port
-    def get_rtr_port(self):
-        return self.rtr_port
-
-
 def cable1(devs, key1):
     devs = dev_list()
-    key1 = getpass(f"{CYN}>>>{RST} Enter the SSH pass: ")
+    key1 = getpass(f"{CYN}>>>{RST} Enter the SSH pass for the {YEL}LB{RST}: ")
+    key2 = getpass(f"{CYN}>>>{RST} Enter the SSH pass for the {YEL}RTR{RST}: ")
     cmd1 = "show interface eth 25"
     with ThreadPoolExecutor(max_workers=8) as exe:
             futures = {exe.submit(ssh1, i, key1, cmd1): i for i in devs}
@@ -202,10 +271,16 @@ def cable1(devs, key1):
                 cable1.store_lb_state(findall(r"\bup|down\b", output))
                 print(f"LB {dev} state: ", cable1.get_lb_state())
 
-                out = flipflop(dev, key1, cable.get_lb_state(), cable.get_lb_port)
-
+                # change the lb state by passing it and its port to the flipflop dunction
+                out = flipflop(dev, key1, cable.get_lb_state(), cable.get_lb_port())
+                
+                # checks the returned output to from up down to determine if the state flipped
                 cable1.store_lb_state(findall(r"\bup|down\b", out))
                 print(f"LB {dev} state: ", cable1.get_lb_state())
+
+                rtrShow(dev, key2, cable1, userSuppliedLBPortRange, fw="")
+
+                print(f"")
 
 
 def main():
